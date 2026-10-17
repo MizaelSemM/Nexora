@@ -1,7 +1,13 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Schema do MarcaAi — CRM de follow-up (ver .notes/002-modelo-de-dados.md)
+//
+// Convenções:
+// - Toda tabela de domínio tem account_id (isolamento multi-tenant — ver .notes/004).
+// - Modelos em PascalCase; tabelas/colunas em snake_case via @map/@@map.
+// - contacts e deals usam exclusão lógica (deleted_at); o resto é hard delete.
+// - timeline_events é imutável (append-only): sem updated_at de propósito.
+// - Ganho/Perdido são DealStatus (não etapas do pipeline): o kanban monta as
+//   colunas terminais a partir do status — fonte única de verdade.
+// - Tabelas de autenticação do Better Auth entram na tarefa 003 (migration própria).
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +16,311 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- Enums
+
+enum Role {
+  ADMIN
+  SELLER
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum TaskType {
+  WHATSAPP
+  CALL
+  MEETING
+  OTHER
+}
+
+enum TaskResult {
+  ANSWERED
+  NO_ANSWER
+  CALLBACK
+  WON
+  LOST
+}
+
+enum LeadOrigin {
+  INSTAGRAM
+  REFERRAL
+  SITE
+  STORE
+  FORM
+  IMPORT
+  OTHER
+}
+
+// ---------------------------------------------------------------- Conta e usuários
+
+model Account {
+  id        String   @id @default(cuid())
+  name      String
+  plan      String   @default("trial")
+  timezone  String   @default("America/Sao_Paulo")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users            User[]
+  contacts         Contact[]
+  pipelines        Pipeline[]
+  stages           Stage[]
+  deals            Deal[]
+  tasks            Task[]
+  notes            Note[]
+  timelineEvents   TimelineEvent[]
+  messageTemplates MessageTemplate[]
+  lostReasons      LostReason[]
+  cadenceRules     CadenceRule[]
+
+  @@map("accounts")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  accountId     String   @map("account_id")
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false) @map("email_verified")
+  image         String?
+  role          Role     @default(SELLER)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  account        Account         @relation(fields: [accountId], references: [id])
+  ownedContacts  Contact[]       @relation("ContactOwner")
+  ownedDeals     Deal[]          @relation("DealOwner")
+  ownedTasks     Task[]          @relation("TaskOwner")
+  notes          Note[]
+  timelineEvents TimelineEvent[]
+
+  @@index([accountId])
+  @@map("users")
+}
+
+// ---------------------------------------------------------------- Contatos
+
+model Contact {
+  id          String      @id @default(cuid())
+  accountId   String      @map("account_id")
+  name        String
+  phone       String
+  email       String?
+  companyText String?     @map("company_text")
+  origin      LeadOrigin?
+  tags        String[]    @default([])
+  ownerId     String?     @map("owner_id")
+  deletedAt   DateTime?   @map("deleted_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  account        Account         @relation(fields: [accountId], references: [id])
+  owner          User?           @relation("ContactOwner", fields: [ownerId], references: [id])
+  deals          Deal[]
+  notes          Note[]
+  timelineEvents TimelineEvent[]
+
+  @@unique([accountId, phone])
+  @@index([accountId, name])
+  @@map("contacts")
+}
+
+// ---------------------------------------------------------------- Funil
+
+model Pipeline {
+  id        String   @id @default(cuid())
+  accountId String   @map("account_id")
+  name      String   @default("Comercial")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  account Account @relation(fields: [accountId], references: [id])
+  stages  Stage[]
+
+  @@index([accountId])
+  @@map("pipelines")
+}
+
+model Stage {
+  id          String   @id @default(cuid())
+  accountId   String   @map("account_id")
+  pipelineId  String   @map("pipeline_id")
+  name        String
+  position    Int
+  probability Int      @default(0)
+  cadenceDays Int?     @map("cadence_days")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  account          Account           @relation(fields: [accountId], references: [id])
+  pipeline         Pipeline          @relation(fields: [pipelineId], references: [id])
+  deals            Deal[]
+  cadenceRules     CadenceRule[]
+  messageTemplates MessageTemplate[]
+
+  @@index([pipelineId, position])
+  @@map("stages")
+}
+
+model Deal {
+  id              String     @id @default(cuid())
+  accountId       String     @map("account_id")
+  title           String
+  value           Decimal?   @db.Decimal(12, 2)
+  stageId         String     @map("stage_id")
+  contactId       String     @map("contact_id")
+  ownerId         String     @map("owner_id")
+  expectedCloseAt DateTime?  @map("expected_close_at")
+  status          DealStatus @default(OPEN)
+  lostReasonId    String?    @map("lost_reason_id")
+  lostNote        String?    @map("lost_note")
+  closedAt        DateTime?  @map("closed_at")
+  // Desnormalizados para a tela "Hoje" e o alerta de parados (ver .notes/007):
+  lastActivityAt  DateTime?  @map("last_activity_at")
+  nextActionAt    DateTime?  @map("next_action_at")
+  deletedAt       DateTime?  @map("deleted_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  account        Account         @relation(fields: [accountId], references: [id])
+  stage          Stage           @relation(fields: [stageId], references: [id])
+  contact        Contact         @relation(fields: [contactId], references: [id])
+  owner          User            @relation("DealOwner", fields: [ownerId], references: [id])
+  lostReason     LostReason?     @relation(fields: [lostReasonId], references: [id])
+  tasks          Task[]
+  notes          Note[]
+  timelineEvents TimelineEvent[]
+
+  @@index([accountId, ownerId, nextActionAt])
+  @@index([accountId, lastActivityAt])
+  @@index([accountId, status, stageId])
+  @@index([accountId, contactId])
+  @@map("deals")
+}
+
+// ---------------------------------------------------------------- Tarefas e follow-up
+
+model Task {
+  id          String      @id @default(cuid())
+  accountId   String      @map("account_id")
+  dealId      String      @map("deal_id")
+  ownerId     String      @map("owner_id")
+  type        TaskType    @default(OTHER)
+  title       String
+  dueAt       DateTime    @map("due_at")
+  completedAt DateTime?   @map("completed_at")
+  result      TaskResult?
+  resultNote  String?     @map("result_note")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  account Account @relation(fields: [accountId], references: [id])
+  deal    Deal    @relation(fields: [dealId], references: [id])
+  owner   User    @relation("TaskOwner", fields: [ownerId], references: [id])
+
+  @@index([accountId, ownerId, dueAt])
+  @@index([accountId, completedAt])
+  @@index([dealId])
+  @@map("tasks")
+}
+
+// ---------------------------------------------------------------- Histórico
+
+model Note {
+  id        String   @id @default(cuid())
+  accountId String   @map("account_id")
+  authorId  String   @map("author_id")
+  dealId    String?  @map("deal_id")
+  contactId String?  @map("contact_id")
+  text      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  account Account  @relation(fields: [accountId], references: [id])
+  author  User     @relation(fields: [authorId], references: [id])
+  deal    Deal?    @relation(fields: [dealId], references: [id])
+  contact Contact? @relation(fields: [contactId], references: [id])
+
+  @@index([accountId, dealId])
+  @@index([accountId, contactId])
+  @@map("notes")
+}
+
+/// Log imutável: só insert, nunca update/delete (ver .notes/008).
+model TimelineEvent {
+  id        String   @id @default(cuid())
+  accountId String   @map("account_id")
+  type      String   // convenção: "deal.created", "task.completed", "note.added"...
+  payload   Json     @default("{}")
+  dealId    String?  @map("deal_id")
+  contactId String?  @map("contact_id")
+  actorId   String?  @map("actor_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  account Account  @relation(fields: [accountId], references: [id])
+  deal    Deal?    @relation(fields: [dealId], references: [id])
+  contact Contact? @relation(fields: [contactId], references: [id])
+  actor   User?    @relation(fields: [actorId], references: [id])
+
+  @@index([accountId, dealId, createdAt])
+  @@index([accountId, contactId, createdAt])
+  @@map("timeline_events")
+}
+
+// ---------------------------------------------------------------- Configurações (P1)
+
+model MessageTemplate {
+  id               String   @id @default(cuid())
+  accountId        String   @map("account_id")
+  name             String
+  body             String
+  suggestedStageId String?  @map("suggested_stage_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  account        Account       @relation(fields: [accountId], references: [id])
+  suggestedStage Stage?        @relation(fields: [suggestedStageId], references: [id])
+  cadenceRules   CadenceRule[]
+
+  @@index([accountId])
+  @@map("message_templates")
+}
+
+model LostReason {
+  id        String   @id @default(cuid())
+  accountId String   @map("account_id")
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  account Account @relation(fields: [accountId], references: [id])
+  deals   Deal[]
+
+  @@unique([accountId, name])
+  @@map("lost_reasons")
+}
+
+model CadenceRule {
+  id             String   @id @default(cuid())
+  accountId      String   @map("account_id")
+  stageId        String   @map("stage_id")
+  daysAfterEntry Int      @map("days_after_entry")
+  taskType       TaskType @default(WHATSAPP) @map("task_type")
+  templateId     String?  @map("template_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  account  Account          @relation(fields: [accountId], references: [id])
+  stage    Stage            @relation(fields: [stageId], references: [id])
+  template MessageTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([accountId, stageId])
+  @@map("cadence_rules")
 }

@@ -36,5 +36,7 @@
 | 17/10/2026 | **Segmento genérico** até as entrevistas | PRD manda decidir com dados, não suposição |
 | 17/10/2026 | Jobs via **Vercel Cron** (dispatcher horário idempotente) | Serverless não comporta worker persistente; suficiente para o P1 |
 | 17/10/2026 | Cronograma recalibrado: **6–8 semanas** para o MVP | Ritmo do dono: ~20–25h/semana (alguns dias por semana) |
+| 17/10/2026 | Migrations: `npm run db:migrate` = `migrate dev --create-only` + `migrate deploy` | O pooler do Supabase não suporta o shadow database do `migrate dev` (dá P1001 e deixa banco órfão). Create-only + deploy é determinístico. Shadow via `SHADOW_DATABASE_URL` (2º projeto) é opcional |
+| 17/10/2026 | ⚠️ Projeto Supabase criado em **us-east-1** (não sa-east-1) — provisório | O dono criou assim; sem dados reais, recriar em São Paulo é só trocar as strings do `.env`. **Revisar antes do piloto** (latência da tela "Hoje") |
 
 > **Formato:** registre decisão + data + justificativa. Nunca delete uma linha — se mudar, adicione "revisto em DD/MM 2026".

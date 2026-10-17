@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "prisma migrate dev --create-only && prisma migrate deploy",
+    "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio"
   },
@@ -48,6 +49,7 @@
     "prettier": "^3.9.10",
     "prisma": "7.10.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.0.5"

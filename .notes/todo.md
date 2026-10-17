@@ -31,11 +31,11 @@ Better Auth (scrypt) · Supabase Postgres **São Paulo** + Vercel **gru1** · mu
   - [x] `prisma init` + `prisma generate` validados (client gerado em `lib/generated/prisma`)
   - [x] shadcn/ui inicializado + 8 componentes base (button, input, label, card, skeleton, sonner, badge, separator)
   - [x] Build de produção, lint e typecheck passando
-  - [ ] Supabase: projeto criado e `.env` preenchido → **precisa da conta do dono**
+  - [x] Supabase: projeto criado e `.env` preenchido (⚠️ região **us-east-1** — recriar em São Paulo antes do piloto; ver `000`)
   - [ ] Vercel + CI (GitHub Actions) + Sentry + PostHog → **precisam das contas do dono**
 
-> Na sequência: **002 · Modelo de dados** (schema Prisma completo) → **004 · Isolamento multi-tenant** → **003 · Auth**.
-> Nota para a 002: avaliar `npx prisma dev` (Postgres local do Prisma 7) para desbloquear migrations antes do Supabase ficar pronto.
+> ✅ **002 concluída** (schema + migration + seed no Supabase). Próxima de código: **004 · Isolamento multi-tenant** → depois **003 · Auth**.
+> Migrations no Supabase: usar `npm run db:migrate` (create-only + deploy) — o pooler não suporta o shadow database do `migrate dev` (ver 002).
 
 ---
 
@@ -43,7 +43,6 @@ Better Auth (scrypt) · Supabase Postgres **São Paulo** + Vercel **gru1** · mu
 
 ### Bloco 1 — Fundação *(semana 1)*
 
-- [ ] **002 · Modelo de dados, migrations e seed** (todas as entidades, enums, índices, funil padrão) → [002-modelo-de-dados.md](002-modelo-de-dados.md)
 - [ ] **004 · Isolamento multi-tenant** (extensão do Prisma + testes) — começar já, retrabalho depois é caro → [004-isolamento-multi-tenant.md](004-isolamento-multi-tenant.md)
 
 ### Bloco 2 — Contas e acesso *(semana 2)*
@@ -92,6 +91,7 @@ Better Auth (scrypt) · Supabase Postgres **São Paulo** + Vercel **gru1** · mu
 - [x] 17/10/2026 — **000 · Decisões técnicas bloqueantes fechadas** (Better Auth, Supabase SP, multi-tenant, atribuição de lead, segmento, jobs)
 - [x] 17/10/2026 — Scaffold do app (Next.js 16 + TS + Tailwind + ESLint) + marca e README
 - [x] 17/10/2026 — **Fundação de código completa**: Prisma 7.10.1 + adapter pg + singleton, shadcn/ui (8 componentes), env com Zod, Vitest/Playwright configurados, Prettier — build/lint/typecheck verdes (commit de checkpoint)
+- [x] 17/10/2026 — **002 · Modelo de dados concluída**: schema com 12 tabelas + enums + índices, migration inicial aplicada no Supabase, seed idempotente (conta demo: 12 contatos/negócios + 13 tarefas), telefone E.164 com 13 testes verdes
 
 ---
 

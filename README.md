@@ -30,20 +30,33 @@ Abra [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
-| Script               | O que faz                               |
-| -------------------- | --------------------------------------- |
-| `npm run dev`        | Servidor de desenvolvimento (Turbopack) |
-| `npm run build`      | Build de produção                       |
-| `npm run lint`       | ESLint                                  |
-| `npm run typecheck`  | TypeScript (sem emitir)                 |
-| `npm run format`     | Prettier em todo o projeto              |
-| `npm test`           | Testes unitários (Vitest)               |
-| `npm run e2e`        | Testes ponta a ponta (Playwright)       |
-| `npm run db:migrate` | Cria/aplica migrations (Prisma)         |
-| `npm run db:seed`    | Popula dados de desenvolvimento         |
-| `npm run db:studio`  | Prisma Studio                           |
+| Script               | O que faz                                       |
+| -------------------- | ----------------------------------------------- |
+| `npm run dev`        | Servidor de desenvolvimento (Turbopack)         |
+| `npm run build`      | Build de produção                               |
+| `npm run lint`       | ESLint                                          |
+| `npm run typecheck`  | TypeScript (sem emitir)                         |
+| `npm run format`     | Prettier em todo o projeto                      |
+| `npm test`           | Testes unitários (Vitest)                       |
+| `npm run e2e`        | Testes ponta a ponta (Playwright)               |
+| `npm run db:migrate` | Cria e aplica migrations (create-only + deploy) |
+| `npm run db:deploy`  | Aplica migrations pendentes (produção)          |
+| `npm run db:seed`    | Popula dados de desenvolvimento (idempotente)   |
+| `npm run db:studio`  | Prisma Studio                                   |
 
 > Para rodar e2e na primeira vez: `npx playwright install chromium`.
+
+## Banco de dados (Prisma 7 + Supabase)
+
+```bash
+npm run db:migrate   # cria a migration a partir do schema e aplica no banco
+npm run db:seed      # funil padrão + conta demo + 12 leads de exemplo
+npm run db:studio    # Prisma Studio
+```
+
+> **Por que `db:migrate` usa `--create-only` + `deploy`?** O pooler do Supabase não suporta o _shadow database_ que o `migrate dev` usa para detectar drift (o engine cria o banco temporário e não consegue conectar → erro P1001). O fluxo create-only + deploy não usa shadow e é determinístico.
+>
+> Quer o `migrate dev` completo (com detecção de drift)? Crie um **segundo projeto Supabase free** só como shadow e defina `SHADOW_DATABASE_URL` no `.env`.
 
 ## Estrutura
 
