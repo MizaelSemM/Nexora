@@ -1,0 +1,15 @@
+.next
+node_modules
+coverage
+playwright-report
+test-results
+package-lock.json
+
+# Documentos de referência (não reformatar)
+.notes
+.agents
+.claude
+.windsurf
+skills-lock.json
+PRD*.md
+AGENTS.md

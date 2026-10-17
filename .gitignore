@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# prisma (client gerado — rode `npx prisma generate` ao clonar; gerado no build)
+/lib/generated/
+
 # next.js
 /.next/
 /out/
@@ -32,10 +35,20 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...mas o exemplo é versionado de propósito
+!.env.example
 
 # vercel
 .vercel
 
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/lib/generated/prisma

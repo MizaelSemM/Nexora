@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MarcaAi — CRM de Follow-up
 
-## Getting Started
+CRM de follow-up para pequenas equipes de vendas: o vendedor abre o app e sabe **quem chamar hoje e por quê**. O escopo completo está no [PRD](<./PRD – CRM de Follow-up para Pequenas Equipes de Vendas (MVP).md>) e o planejamento em [.notes/](./.notes/todo.md).
 
-First, run the development server:
+## Stack
+
+| Camada    | Tecnologia                                          |
+| --------- | --------------------------------------------------- |
+| App       | Next.js 16 (App Router) + TypeScript                |
+| UI        | Tailwind CSS 4 + shadcn/ui                          |
+| Banco     | PostgreSQL (Supabase — região São Paulo) + Prisma 7 |
+| Validação | Zod 4 (schemas compartilhados em `lib/schemas/`)    |
+| Auth      | Better Auth (e-mail/senha, convites, recuperação)   |
+| E-mail    | Resend                                              |
+| Observab. | Sentry + PostHog                                    |
+| Testes    | Vitest (unit) + Playwright (e2e)                    |
+| Deploy    | Vercel (funções em gru1 — São Paulo)                |
+
+## Como rodar
+
+Requisitos: **Node 22+** e npm.
 
 ```bash
+npm install
+copy .env.example .env   # Windows (cp no macOS/Linux) — preencha os valores
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script               | O que faz                               |
+| -------------------- | --------------------------------------- |
+| `npm run dev`        | Servidor de desenvolvimento (Turbopack) |
+| `npm run build`      | Build de produção                       |
+| `npm run lint`       | ESLint                                  |
+| `npm run typecheck`  | TypeScript (sem emitir)                 |
+| `npm run format`     | Prettier em todo o projeto              |
+| `npm test`           | Testes unitários (Vitest)               |
+| `npm run e2e`        | Testes ponta a ponta (Playwright)       |
+| `npm run db:migrate` | Cria/aplica migrations (Prisma)         |
+| `npm run db:seed`    | Popula dados de desenvolvimento         |
+| `npm run db:studio`  | Prisma Studio                           |
 
-## Learn More
+> Para rodar e2e na primeira vez: `npx playwright install chromium`.
 
-To learn more about Next.js, take a look at the following resources:
+## Estrutura
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+app/          rotas e telas (App Router)
+components/   UI compartilhada (shadcn/ui)
+lib/          utilitários — env.ts, phone.ts, schemas/ (Zod)
+server/       regras de negócio — services/ (follow-up, createLead...)
+prisma/       schema, migrations e seed
+tests/        testes unitários (Vitest)
+e2e/          testes ponta a ponta (Playwright)
+.notes/       planejamento, decisões e backlog
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Convenções (valem para todo PR)
 
-## Deploy on Vercel
+1. **Validação em um só lugar:** toda entrada (formulário, Server Action, CSV, formulário público) é validada com os schemas de `lib/schemas/` no servidor.
+2. **Isolamento por conta:** toda query passa pelo Prisma Client estendido que injeta `account_id` (ver `.notes/004-isolamento-multi-tenant.md`). Nunca use o client cru para dados de conta.
+3. **Server Components por padrão;** `"use client"` só onde houver interação.
+4. **Nunca leia `process.env` direto** — use `lib/env.ts`.
+5. **Esta versão do Next.js tem mudanças:** antes de codar algo do framework, consulte o guia local em `node_modules/next/dist/docs/` (o `AGENTS.md` da raiz explica).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Planejamento do MVP
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Quadro de tarefas: [.notes/todo.md](./.notes/todo.md)
+- Decisões técnicas fechadas: [.notes/000-decisoes-tecnicas.md](./.notes/000-decisoes-tecnicas.md)
+- Critérios de lançamento: [.notes/016-lancamento-piloto.md](./.notes/016-lancamento-piloto.md)
