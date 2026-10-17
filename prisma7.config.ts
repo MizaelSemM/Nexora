@@ -9,6 +9,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // O CLI (migrate/studio) prefere a conexão direta; o app (lib/prisma.ts) usa DATABASE_URL.
+    // No Supabase: DIRECT_URL = conexão direta (5432); DATABASE_URL = pooler (6543) quando aplicável.
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });
