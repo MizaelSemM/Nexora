@@ -34,16 +34,12 @@ Better Auth (scrypt) · Supabase Postgres **São Paulo** + Vercel **gru1** · mu
   - [x] Supabase: projeto criado e `.env` preenchido (⚠️ região **us-east-1** — recriar em São Paulo antes do piloto; ver `000`)
   - [ ] Vercel + CI (GitHub Actions) + Sentry + PostHog → **precisam das contas do dono**
 
-> ✅ **002 concluída** (schema + migration + seed no Supabase). Próxima de código: **004 · Isolamento multi-tenant** → depois **003 · Auth**.
+> ✅ **004 concluída** (isolamento multi-tenant automático — 28 testes verdes). Próxima de código: **003 · Auth** (Better Auth + sessão → contexto de conta).
 > Migrations no Supabase: usar `npm run db:migrate` (create-only + deploy) — o pooler não suporta o shadow database do `migrate dev` (ver 002).
 
 ---
 
 ## 📋 Backlog (Próximas Tarefas)
-
-### Bloco 1 — Fundação *(semana 1)*
-
-- [ ] **004 · Isolamento multi-tenant** (extensão do Prisma + testes) — começar já, retrabalho depois é caro → [004-isolamento-multi-tenant.md](004-isolamento-multi-tenant.md)
 
 ### Bloco 2 — Contas e acesso *(semana 2)*
 
@@ -92,6 +88,7 @@ Better Auth (scrypt) · Supabase Postgres **São Paulo** + Vercel **gru1** · mu
 - [x] 17/10/2026 — Scaffold do app (Next.js 16 + TS + Tailwind + ESLint) + marca e README
 - [x] 17/10/2026 — **Fundação de código completa**: Prisma 7.10.1 + adapter pg + singleton, shadcn/ui (8 componentes), env com Zod, Vitest/Playwright configurados, Prettier — build/lint/typecheck verdes (commit de checkpoint)
 - [x] 17/10/2026 — **002 · Modelo de dados concluída**: schema com 12 tabelas + enums + índices, migration inicial aplicada no Supabase, seed idempotente (conta demo: 12 contatos/negócios + 13 tarefas), telefone E.164 com 13 testes verdes
+- [x] 17/10/2026 — **004 · Isolamento multi-tenant concluída**: client de tenant (`$extends`) com `account_id` automático, contexto por request (AsyncLocalStorage), SQL cru bloqueado no lint, regressão estrutural do schema — 15 testes novos (28 verdes no total)
 
 ---
 

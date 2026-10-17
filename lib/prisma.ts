@@ -4,10 +4,12 @@ import { PrismaClient } from "@/lib/generated/prisma/client";
 import { env } from "@/lib/env";
 
 /**
- * Instância única do Prisma Client (Prisma 7 + driver adapter do Postgres).
+ * Prisma Client "cru" (Prisma 7 + driver adapter do Postgres).
  *
- * ⚠️ Na tarefa 004 esta instância será EXTENDIDA para injetar `account_id` em
- * toda consulta. Não use este client "cru" em código de domínio — ele é a base.
+ * ⚠️ REGRA DO PROJETO (tarefa 004): dados de conta passam SEMPRE pelo client de
+ * tenant — `tenantDb()` em `lib/tenant-prisma.ts` — que injeta `account_id` em
+ * todas as consultas. Este client aqui é só para operações de SISTEMA:
+ * onboarding, autenticação, scripts e manutenção. Nunca use em features de conta.
  *
  * Em dev o Next recarrega os módulos a cada mudança; o cache em globalThis
  * evita abrir um pool de conexões novo a cada reload.
@@ -19,8 +21,8 @@ function createPrismaClient() {
   return new PrismaClient({ adapter });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+export const prismaBase = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma.prisma = prismaBase;
 }

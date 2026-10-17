@@ -63,7 +63,7 @@ npm run db:studio    # Prisma Studio
 ```
 app/          rotas e telas (App Router)
 components/   UI compartilhada (shadcn/ui)
-lib/          utilitários — env.ts, phone.ts, schemas/ (Zod)
+lib/          utilitários — env.ts, phone.ts, tenant-context.ts, tenant-prisma.ts, schemas/ (Zod)
 server/       regras de negócio — services/ (follow-up, createLead...)
 prisma/       schema, migrations e seed
 tests/        testes unitários (Vitest)
@@ -74,7 +74,7 @@ e2e/          testes ponta a ponta (Playwright)
 ## Convenções (valem para todo PR)
 
 1. **Validação em um só lugar:** toda entrada (formulário, Server Action, CSV, formulário público) é validada com os schemas de `lib/schemas/` no servidor.
-2. **Isolamento por conta:** toda query passa pelo Prisma Client estendido que injeta `account_id` (ver `.notes/004-isolamento-multi-tenant.md`). Nunca use o client cru para dados de conta.
+2. **Isolamento por conta:** todo código de feature usa `tenantDb()` — o client estendido que injeta `account_id` automaticamente (ver `lib/tenant-prisma.ts` e `.notes/004-isolamento-multi-tenant.md`). `prismaBase` é só para operações de sistema (onboarding, auth, scripts). SQL cru (`$queryRaw*`) é bloqueado no lint.
 3. **Server Components por padrão;** `"use client"` só onde houver interação.
 4. **Nunca leia `process.env` direto** — use `lib/env.ts`.
 5. **Esta versão do Next.js tem mudanças:** antes de codar algo do framework, consulte o guia local em `node_modules/next/dist/docs/` (o `AGENTS.md` da raiz explica).
