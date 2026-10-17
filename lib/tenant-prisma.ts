@@ -27,9 +27,11 @@ import { requireTenantContext, type TenantContext } from "@/lib/tenant-context";
  * revisado aqui e filtre `account_id` explicitamente.
  */
 
-/** Models (nome como o Prisma expõe) que pertencem a uma conta. */
+/**
+ * Models de DOMÍNIO, cujos dados pertencem a uma conta (coluna `account_id` de
+ * tenant). O client de tenant injeta/carimba o `accountId` do contexto neles.
+ */
 export const TENANT_MODELS = [
-  "account",
   "user",
   "contact",
   "pipeline",
@@ -41,10 +43,17 @@ export const TENANT_MODELS = [
   "messageTemplate",
   "lostReason",
   "cadenceRule",
+  "invite",
 ] as const;
 
-/** Models globais sem coluna `account_id` (a própria conta: `id` É o tenant). */
-export const MODELS_WITHOUT_ACCOUNT_ID = ["Account"] as const;
+/**
+ * Models GLOBAIS, fora do escopo de conta: a própria conta (`Account` — o `id`
+ * É o tenant) e as tabelas de autenticação do Better Auth. Não têm `account_id`
+ * de tenant (no `AuthAccount`, o campo `accountId` é o id do PROVIDER — não é
+ * tenant) e NÃO podem ser usados pelo client de tenant: auth roda via
+ * `prismaBase` (client de sistema), como em lib/auth.ts.
+ */
+export const GLOBAL_MODELS = ["Account", "Session", "AuthAccount", "Verification"] as const;
 
 export class TenantIsolationError extends Error {
   constructor(message: string) {
@@ -100,11 +109,34 @@ function hardenAccountModel(operation: string, args: Args, accountId: string): v
   );
 }
 
+// Conjuntos em minúsculas: o nome do model chega do Prisma em PascalCase
+// ("Account"), mas as listas exportadas são a fonte única — comparação sem caixa.
+const TENANT_MODEL_KEYS = new Set<string>(TENANT_MODELS.map((model) => model.toLowerCase()));
+const GLOBAL_MODEL_KEYS = new Set<string>(GLOBAL_MODELS.map((model) => model.toLowerCase()));
+
 /** Reescreve os argumentos da operação conforme as regras de isolamento. */
 export function hardenArgs(model: string, operation: string, args: Args, accountId: string): void {
-  if (model === "Account") {
+  const modelKey = model.toLowerCase();
+
+  if (modelKey === "account") {
     hardenAccountModel(operation, args, accountId);
     return;
+  }
+
+  if (GLOBAL_MODEL_KEYS.has(modelKey)) {
+    // Tabelas de autenticação e a própria conta: fora do escopo do client de
+    // tenant — falam com o client de sistema (prismaBase), em lib/auth.ts.
+    throw new TenantIsolationError(
+      `"${model}" é um model global (auth/conta) — use prismaBase (client de sistema).`,
+    );
+  }
+
+  if (!TENANT_MODEL_KEYS.has(modelKey)) {
+    // Fail-closed: model novo no schema precisa entrar em TENANT_MODELS ou em
+    // GLOBAL_MODELS (lib/tenant-prisma.ts) — senão o client de tenant recusa.
+    throw new TenantIsolationError(
+      `Model "${model}" desconhecido pelo client de tenant — adicione-o a TENANT_MODELS ou GLOBAL_MODELS.`,
+    );
   }
 
   if (READ_OPERATIONS.has(operation)) {

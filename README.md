@@ -28,6 +28,8 @@ npm run dev
 
 Abra [http://localhost:3000](http://localhost:3000).
 
+> O `.env` precisa de `DATABASE_URL`/`DIRECT_URL` (Supabase), `BETTER_AUTH_SECRET` (32+ chars) e `BETTER_AUTH_URL`. `RESEND_API_KEY` é opcional em dev — sem ela, os e-mails aparecem no console.
+
 ## Scripts
 
 | Script               | O que faz                                       |
@@ -37,14 +39,14 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `npm run lint`       | ESLint                                          |
 | `npm run typecheck`  | TypeScript (sem emitir)                         |
 | `npm run format`     | Prettier em todo o projeto                      |
-| `npm test`           | Testes unitários (Vitest)                       |
+| `npm test`           | Testes (Vitest): unit + integração (banco real) |
 | `npm run e2e`        | Testes ponta a ponta (Playwright)               |
 | `npm run db:migrate` | Cria e aplica migrations (create-only + deploy) |
 | `npm run db:deploy`  | Aplica migrations pendentes (produção)          |
 | `npm run db:seed`    | Popula dados de desenvolvimento (idempotente)   |
 | `npm run db:studio`  | Prisma Studio                                   |
 
-> Para rodar e2e na primeira vez: `npx playwright install chromium`.
+> Para rodar e2e na primeira vez: `npx playwright install chromium`. Os testes de integração batem no banco do `.env` (criam e limpam os próprios dados).
 
 ## Banco de dados (Prisma 7 + Supabase)
 
@@ -58,15 +60,24 @@ npm run db:studio    # Prisma Studio
 >
 > Quer o `migrate dev` completo (com detecção de drift)? Crie um **segundo projeto Supabase free** só como shadow e defina `SHADOW_DATABASE_URL` no `.env`.
 
+## Autenticação e contas
+
+- **Cadastro** (`/cadastro`): cria a conta (empresa) + o primeiro usuário **Admin** — é o caminho oficial de entrada.
+- **Login** (`/login`) · **Recuperação** (`/esqueci-senha` → `/redefinir-senha`) · **Convites**: o Admin gera o link em `/equipe` e o convidado entra por `/convite/[token]`.
+- **Logins da demo** (depois de `npm run db:seed`): `ana@demo.marcaai.dev` (Admin) e `bruno@demo.marcaai.dev` (Vendedor) — senha `demo1234` (só demonstração local).
+- **Desativar** um usuário em `/equipe` derruba as sessões na hora, bloqueia login novo e não apaga histórico.
+- O `proxy.ts` faz só uma checagem **otimista** do cookie de sessão (menos latência); a validação real acontece em toda página/action via `requireAuth()`/`requireRole()` (`lib/session.ts`).
+- Fluxos com rate limit (login, cadastro, reset) passam pelo navegador em `/api/auth/*`; cadastro e convite são Server Actions (criam a conta no servidor).
+
 ## Estrutura
 
 ```
-app/          rotas e telas (App Router)
+app/          rotas e telas — (auth) públicas e (app) logadas (App Router)
 components/   UI compartilhada (shadcn/ui)
-lib/          utilitários — env.ts, phone.ts, tenant-context.ts, tenant-prisma.ts, schemas/ (Zod)
-server/       regras de negócio — services/ (follow-up, createLead...)
+lib/          utilitários — env, phone, auth(+client), session, access, tenant-*, schemas/ (Zod)
+server/       regras de negócio — signup, invites, team, erros tipados
 prisma/       schema, migrations e seed
-tests/        testes unitários (Vitest)
+tests/        testes Vitest — unit/ e integration/ (banco real)
 e2e/          testes ponta a ponta (Playwright)
 .notes/       planejamento, decisões e backlog
 ```
@@ -75,9 +86,10 @@ e2e/          testes ponta a ponta (Playwright)
 
 1. **Validação em um só lugar:** toda entrada (formulário, Server Action, CSV, formulário público) é validada com os schemas de `lib/schemas/` no servidor.
 2. **Isolamento por conta:** todo código de feature usa `tenantDb()` — o client estendido que injeta `account_id` automaticamente (ver `lib/tenant-prisma.ts` e `.notes/004-isolamento-multi-tenant.md`). `prismaBase` é só para operações de sistema (onboarding, auth, scripts). SQL cru (`$queryRaw*`) é bloqueado no lint.
-3. **Server Components por padrão;** `"use client"` só onde houver interação.
-4. **Nunca leia `process.env` direto** — use `lib/env.ts`.
-5. **Esta versão do Next.js tem mudanças:** antes de codar algo do framework, consulte o guia local em `node_modules/next/dist/docs/` (o `AGENTS.md` da raiz explica).
+3. **Sessão e papel:** página/action protegida usa `requireAuth()`/`requireRole()` e roda as queries de domínio dentro de `withSession`/`withAdmin` (abre o contexto de tenant). Papel nunca vem do client.
+4. **Server Components por padrão;** `"use client"` só onde houver interação.
+5. **Nunca leia `process.env` direto** — use `lib/env.ts`.
+6. **Esta versão do Next.js tem mudanças:** antes de codar algo do framework, consulte o guia local em `node_modules/next/dist/docs/` (o `AGENTS.md` da raiz explica).
 
 ## Planejamento do MVP
 

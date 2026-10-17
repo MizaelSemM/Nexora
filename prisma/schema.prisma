@@ -7,7 +7,9 @@
 // - timeline_events é imutável (append-only): sem updated_at de propósito.
 // - Ganho/Perdido são DealStatus (não etapas do pipeline): o kanban monta as
 //   colunas terminais a partir do status — fonte única de verdade.
-// - Tabelas de autenticação do Better Auth entram na tarefa 003 (migration própria).
+// - Tabelas de autenticação do Better Auth e convites entram na tarefa 003 (migration própria).
+//   No Better Auth, o model "account" é o de credenciais (provider) — mapeado aqui
+//   para `AuthAccount` (NOTA: `AuthAccount.accountId` é o id DO PROVEDOR, não o tenant).
 
 generator client {
   provider = "prisma-client"
@@ -77,6 +79,7 @@ model Account {
   messageTemplates MessageTemplate[]
   lostReasons      LostReason[]
   cadenceRules     CadenceRule[]
+  invites          Invite[]
 
   @@map("accounts")
 }
@@ -99,6 +102,9 @@ model User {
   ownedTasks     Task[]          @relation("TaskOwner")
   notes          Note[]
   timelineEvents TimelineEvent[]
+  sessions       Session[]
+  authAccounts   AuthAccount[]
+  invitesCreated Invite[]        @relation("InviteCreatedBy")
 
   @@index([accountId])
   @@map("users")
@@ -323,4 +329,87 @@ model CadenceRule {
 
   @@index([accountId, stageId])
   @@map("cadence_rules")
+}
+
+// ---------------------------------------------------------------- Autenticação e convites (003)
+//
+// Tabelas do Better Auth + convites. NENHUMA delas é acessível pelo client de
+// tenant (`tenantDb()`): autenticação roda pelo client de sistema (`prismaBase`),
+// como o guard de lib/tenant-prisma.ts e os testes garantem.
+
+/// Sessão de login (Better Auth). O cookie carrega o token; o restante fica aqui.
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+/// Conta de credenciais do Better Auth (e-mail/senha hoje; OAuth no futuro).
+/// ATENÇÃO: `accountId` AQUI é o id do usuário NO PROVEDOR (Better Auth) — não é
+/// a conta/tenant do MarcaAi (essa é `User.accountId`). No Better Auth este model
+/// se chama "account"; em lib/auth.ts mapeamos para a propriedade `authAccount`.
+model AuthAccount {
+  id                    String    @id @default(cuid())
+  providerId            String    @map("provider_id")
+  accountId             String    @map("account_id")
+  userId                String    @map("user_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_accounts")
+}
+
+/// Tokens de uso único do Better Auth (ex.: `reset-password:<token>` com 1h de validade).
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+/// Convite para entrar na conta (RF-04). Token aleatório de uso único (7 dias);
+/// aceite cria o User vinculado à conta, com o papel do convite.
+model Invite {
+  id          String    @id @default(cuid())
+  accountId   String    @map("account_id")
+  email       String
+  role        Role      @default(SELLER)
+  token       String    @unique
+  createdById String    @map("created_by_id")
+  expiresAt   DateTime  @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  account   Account @relation(fields: [accountId], references: [id])
+  createdBy User    @relation("InviteCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([accountId, email])
+  @@map("invites")
 }

@@ -33,17 +33,14 @@ Better Auth (scrypt) · Supabase Postgres **São Paulo** + Vercel **gru1** · mu
   - [x] Build de produção, lint e typecheck passando
   - [x] Supabase: projeto criado e `.env` preenchido (⚠️ região **us-east-1** — recriar em São Paulo antes do piloto; ver `000`)
   - [ ] Vercel + CI (GitHub Actions) + Sentry + PostHog → **precisam das contas do dono**
+  - [ ] Resend → conta + domínio verificado para e-mails reais de convite/reset (em dev o link cai no console)
 
-> ✅ **004 concluída** (isolamento multi-tenant automático — 28 testes verdes). Próxima de código: **003 · Auth** (Better Auth + sessão → contexto de conta).
+> ✅ **003 concluída** (auth, contas, papéis e convites — 53 testes verdes; build/lint/typecheck ✓). Próxima de código: **005 · Contatos e captura rápida de lead**.
 > Migrations no Supabase: usar `npm run db:migrate` (create-only + deploy) — o pooler não suporta o shadow database do `migrate dev` (ver 002).
 
 ---
 
 ## 📋 Backlog (Próximas Tarefas)
-
-### Bloco 2 — Contas e acesso *(semana 2)*
-
-- [ ] **003 · Auth, contas, papéis e convites** (Better Auth) (RF-01..RF-04) → [003-auth-contas-convites.md](003-auth-contas-convites.md)
 
 ### Bloco 3 — CRM essencial *(semana 2–3)*
 
@@ -89,6 +86,7 @@ Better Auth (scrypt) · Supabase Postgres **São Paulo** + Vercel **gru1** · mu
 - [x] 17/10/2026 — **Fundação de código completa**: Prisma 7.10.1 + adapter pg + singleton, shadcn/ui (8 componentes), env com Zod, Vitest/Playwright configurados, Prettier — build/lint/typecheck verdes (commit de checkpoint)
 - [x] 17/10/2026 — **002 · Modelo de dados concluída**: schema com 12 tabelas + enums + índices, migration inicial aplicada no Supabase, seed idempotente (conta demo: 12 contatos/negócios + 13 tarefas), telefone E.164 com 13 testes verdes
 - [x] 17/10/2026 — **004 · Isolamento multi-tenant concluída**: client de tenant (`$extends`) com `account_id` automático, contexto por request (AsyncLocalStorage), SQL cru bloqueado no lint, regressão estrutural do schema — 15 testes novos (28 verdes no total)
+- [x] 17/10/2026 — **003 · Auth, contas, papéis e convites concluída**: Better Auth 1.7.10 (sessão em cookie, scrypt, rate limit), cadastro cria conta + Admin, convites com link copiável e uso único, reset de senha ponta a ponta, `/equipe` com desativar/reativar, proxy otimista + `requireAuth`/`requireRole` — 25 testes novos (53 verdes no total), build Cache Components ✓
 
 ---
 

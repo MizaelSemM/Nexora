@@ -17,12 +17,16 @@ const envSchema = z.object({
       message: "DATABASE_URL deve ser uma connection string Postgres (postgresql://...)",
     }),
 
-  // Autenticação (Better Auth) — obrigatório a partir da tarefa 003.
-  BETTER_AUTH_SECRET: z.string().min(32).optional(),
-  BETTER_AUTH_URL: z.url().optional(),
+  // Autenticação (Better Auth) — obrigatório desde a tarefa 003.
+  // Gere o segredo com: node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+  BETTER_AUTH_SECRET: z.string().min(32),
+  // URL pública do app: links de e-mail (reset/convite) e origin check do Better Auth.
+  BETTER_AUTH_URL: z.url(),
 
   // E-mail transacional (Resend) — tarefas 003/009/015.
+  // Sem a chave, o mailer registra o e-mail no console (dev) em vez de enviar.
   RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
 
   // Observabilidade — tarefa 013.
   SENTRY_DSN: z.url().optional(),

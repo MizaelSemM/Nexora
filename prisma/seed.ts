@@ -8,6 +8,7 @@
 import "dotenv/config";
 
 import { PrismaPg } from "@prisma/adapter-pg";
+import { hashPassword } from "better-auth/crypto";
 
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { normalizePhoneBR } from "../lib/phone";
@@ -349,6 +350,33 @@ async function main() {
       email: "bruno@demo.marcaai.dev",
       emailVerified: true,
       role: "SELLER",
+    },
+    update: {},
+  });
+
+  // Credenciais de login da demo (Better Auth): providerId "credential" + hash
+  // scrypt. Senha dos dois logins abaixo: demo1234 — apenas demonstração local
+  // (documentada no README). Fora da demo, o caminho é cadastro/convite.
+  const DEMO_PASSWORD = "demo1234";
+  await prisma.authAccount.upsert({
+    where: { id: "demo-auth-admin" },
+    create: {
+      id: "demo-auth-admin",
+      providerId: "credential",
+      accountId: USERS.admin,
+      userId: USERS.admin,
+      password: await hashPassword(DEMO_PASSWORD),
+    },
+    update: {},
+  });
+  await prisma.authAccount.upsert({
+    where: { id: "demo-auth-seller" },
+    create: {
+      id: "demo-auth-seller",
+      providerId: "credential",
+      accountId: USERS.seller,
+      userId: USERS.seller,
+      password: await hashPassword(DEMO_PASSWORD),
     },
     update: {},
   });

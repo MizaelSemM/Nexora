@@ -38,5 +38,9 @@
 | 17/10/2026 | Cronograma recalibrado: **6–8 semanas** para o MVP | Ritmo do dono: ~20–25h/semana (alguns dias por semana) |
 | 17/10/2026 | Migrations: `npm run db:migrate` = `migrate dev --create-only` + `migrate deploy` | O pooler do Supabase não suporta o shadow database do `migrate dev` (dá P1001 e deixa banco órfão). Create-only + deploy é determinístico. Shadow via `SHADOW_DATABASE_URL` (2º projeto) é opcional |
 | 17/10/2026 | ⚠️ Projeto Supabase criado em **us-east-1** (não sa-east-1) — provisório | O dono criou assim; sem dados reais, recriar em São Paulo é só trocar as strings do `.env`. **Revisar antes do piloto** (latência da tela "Hoje") |
+| 17/10/2026 | Tabela `account` do Better Auth mapeada para **`auth_accounts`** (model Prisma `AuthAccount`) | Evita confusão com a conta/tenant (`Account`). No `auth_accounts.account_id` o valor é o id do PROVEDOR, não o tenant |
+| 17/10/2026 | Cadastro/convite abrem um **contexto de cadastro** (AsyncLocalStorage) e o hook `user.create.before` injeta `accountId`/`role` | O endpoint público de cadastro é bloqueado; papel/tenant nunca vêm do client (`input: false`) |
+| 17/10/2026 | `proxy.ts` (ex-middleware) faz só **checagem otimista de cookie**; validação real via `requireAuth()`/`requireRole()` | Sem consulta de banco por navegação (padrão DAL do Next); o proxy é a 1ª barreira, não a única |
+| 17/10/2026 | Convites: token aleatório de 32 chars **em texto plano**, 7 dias, uso único | Credencial de curto prazo; guardar hash fica para o hardening da 013 |
 
 > **Formato:** registre decisão + data + justificativa. Nunca delete uma linha — se mudar, adicione "revisto em DD/MM 2026".

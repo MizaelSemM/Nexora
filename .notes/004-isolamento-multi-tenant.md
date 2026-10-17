@@ -45,3 +45,12 @@
 - **Testes (28 verdes no total; 15 novos):** `tenant-context` (3), regressão estrutural do schema (3 — novo model sem `accountId` ou fora de `TENANT_MODELS` quebra), integração contra o banco real (9 — duas contas completas, leitura/listagem/update/delete cruzado por entidade, create forjado, upsert, transação interativa, `Account`, `tenantDb()`).
 - **⚠ Pendência do critério de aceite:** a suíte roda local (`npm test`) mas ainda **não roda no CI** — o pipeline é pendência da 001/014. Ao montar o CI, decidir o banco: serviço Postgres do runner ou banco de testes dedicado.
 - **Limitação conhecida (documentada no código):** injeção é top-level; **escritas aninhadas** (ex.: `deal.update({ data: { tasks: { create: ... } } })`) não são reescritas — crie filhos em operações separadas dentro de `$transaction`. Não há vazamento silencioso: create aninhado sem `accountId` falha com NOT NULL e ids são `cuid()` (não adivinháveis).
+
+---
+
+## 🔄 Atualização pela 003 (17/10/2026)
+
+- `TENANT_MODELS` agora lista **só models com `account_id` de tenant**: saiu `account`, entrou `invite`. Nasceu `GLOBAL_MODELS` = `["Account", "Session", "AuthAccount", "Verification"]` (conta + tabelas do Better Auth).
+- O guard do client de tenant ficou **fail-closed**: operar um model global (ex.: `session`) via `tenantDb()` lança `TenantIsolationError`; um model novo no schema que não esteja nas duas listas **também lança** — nada "escapa" por esquecimento.
+- O teste estrutural passou a provar a **partição**: `TENANT_MODELS` ∪ `GLOBAL_MODELS` = exatamente todos os models do schema, sem sobreposição (23 unit/integração verdes em conjunto com a suíte da 003; 53 no total).
+- Comprovação em integração (`tests/integration/auth-flow.test.ts`): `session`/`authAccount`/`verification` lançam erro pelo client de tenant; convites criados por ele nascem com `account_id` carimbado.
