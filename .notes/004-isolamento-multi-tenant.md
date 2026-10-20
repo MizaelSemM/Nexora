@@ -59,7 +59,8 @@
 
 ## 🔄 Atualização de CI (20/10/2026)
 
-- Workflow criado em `.github/workflows/ci.yml`, disparado em `pull_request` e `push` na `main`.
+- Workflow criado em `.github/workflows/ci.yml`, disparado em `pull_request` e `push` na `master`.
 - Job único com **Postgres 17 efêmero** no runner (sem secrets externos), `prisma generate` + `prisma migrate deploy`, depois `format:check`, lint, typecheck, `npm test` (unit + integração) e build de produção.
 - O banco de teste é descartado ao fim do job; a suíte de isolamento roda contra um banco limpo a cada PR.
-- ⏳ **Critério de aceite:** aguardando a primeira execução verde no GitHub Actions após o push. O run local equivalente já passou (53 testes, lint, typecheck, format e build ✓).
+- **Correção após o 1º run (20/10/2026):** `npm run typecheck` passou a executar `next typegen && tsc --noEmit`. Os tipos `PageProps`/`LayoutProps` e o `next-env.d.ts` são gerados pelo Next 16 e não existem em um checkout limpo — o CI falhava antes do primeiro `next build`.
+- ⏳ **Critério de aceite:** aguardando a primeira execução verde no GitHub Actions após o push. O run local equivalente já passou (53 testes, lint, typecheck do zero, format e build ✓).
