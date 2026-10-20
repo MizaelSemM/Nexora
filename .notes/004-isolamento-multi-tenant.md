@@ -54,3 +54,12 @@
 - O guard do client de tenant ficou **fail-closed**: operar um model global (ex.: `session`) via `tenantDb()` lança `TenantIsolationError`; um model novo no schema que não esteja nas duas listas **também lança** — nada "escapa" por esquecimento.
 - O teste estrutural passou a provar a **partição**: `TENANT_MODELS` ∪ `GLOBAL_MODELS` = exatamente todos os models do schema, sem sobreposição (23 unit/integração verdes em conjunto com a suíte da 003; 53 no total).
 - Comprovação em integração (`tests/integration/auth-flow.test.ts`): `session`/`authAccount`/`verification` lançam erro pelo client de tenant; convites criados por ele nascem com `account_id` carimbado.
+
+---
+
+## 🔄 Atualização de CI (20/10/2026)
+
+- Workflow criado em `.github/workflows/ci.yml`, disparado em `pull_request` e `push` na `main`.
+- Job único com **Postgres 17 efêmero** no runner (sem secrets externos), `prisma generate` + `prisma migrate deploy`, depois `format:check`, lint, typecheck, `npm test` (unit + integração) e build de produção.
+- O banco de teste é descartado ao fim do job; a suíte de isolamento roda contra um banco limpo a cada PR.
+- ⏳ **Critério de aceite:** aguardando a primeira execução verde no GitHub Actions após o push. O run local equivalente já passou (53 testes, lint, typecheck, format e build ✓).
