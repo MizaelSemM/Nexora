@@ -27,6 +27,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <Link href="/" className="text-lg font-semibold tracking-tight">
             MarcaAi
           </Link>
+          <Link
+            href="/contatos"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Contatos
+          </Link>
           {session.user.role === "ADMIN" && (
             <Link
               href="/equipe"

@@ -1,7 +1,7 @@
 # ✅ TODO — CRM de Follow-up para Pequenas Equipes de Vendas (MVP)
 
 **Fonte:** [PRD – CRM de Follow-up para Pequenas Equipes de Vendas (MVP)](<../PRD – CRM de Follow-up para Pequenas Equipes de Vendas (MVP).md>)
-**Atualizado em:** 17/10/2026 · **Fase atual:** 1 — Fundação · **Prazo recalibrado: ~6–8 semanas** (ritmo ~20–25h/semana)
+**Atualizado em:** 23/10/2026 · **Fase atual:** 2 — CRM essencial · **Prazo recalibrado: ~6–8 semanas** (ritmo ~20–25h/semana)
 
 ---
 
@@ -32,10 +32,11 @@ Better Auth (scrypt) · Supabase Postgres **São Paulo** + Vercel **gru1** · mu
   - [x] shadcn/ui inicializado + 8 componentes base (button, input, label, card, skeleton, sonner, badge, separator)
   - [x] Build de produção, lint e typecheck passando
   - [x] Supabase: projeto criado e `.env` preenchido (⚠️ região **us-east-1** — recriar em São Paulo antes do piloto; ver `000`)
-  - [ ] Vercel + CI (GitHub Actions) + Sentry + PostHog → **precisam das contas do dono**
+  - [x] CI (GitHub Actions) com Postgres efêmero, migrations, lint, typecheck, testes e build
+  - [ ] Vercel + Sentry + PostHog → **precisam das contas do dono**
   - [ ] Resend → conta + domínio verificado para e-mails reais de convite/reset (em dev o link cai no console)
 
-> ✅ **003 concluída** (auth, contas, papéis e convites — 53 testes verdes; build/lint/typecheck ✓). Próxima de código: **005 · Contatos e captura rápida de lead**.
+> ✅ **005 concluída** (contatos e captura rápida — `createLead()`, funil padrão no cadastro + fallback, lista/busca/paginação, edição, exclusão lógica e WhatsApp; 74 testes verdes). Próxima de código: **006 · Funil e negócios (kanban + lista)**.
 > Migrations no Supabase: usar `npm run db:migrate` (create-only + deploy) — o pooler não suporta o shadow database do `migrate dev` (ver 002).
 
 ---
@@ -44,7 +45,7 @@ Better Auth (scrypt) · Supabase Postgres **São Paulo** + Vercel **gru1** · mu
 
 ### Bloco 3 — CRM essencial *(semana 2–3)*
 
-- [ ] **005 · Contatos e captura rápida de lead** (RF-10, RF-13, RF-14) → [005-contatos-e-captura.md](005-contatos-e-captura.md)
+- [x] **005 · Contatos e captura rápida de lead** (RF-10, RF-13, RF-14) → [005-contatos-e-captura.md](005-contatos-e-captura.md)
 - [ ] **006 · Funil e negócios: kanban + lista** (RF-20..RF-23) → [006-funil-kanban-negocios.md](006-funil-kanban-negocios.md)
 
 ### Bloco 4 — Diferencial do produto ⭐ *(semana 3–5)*
@@ -87,6 +88,7 @@ Better Auth (scrypt) · Supabase Postgres **São Paulo** + Vercel **gru1** · mu
 - [x] 17/10/2026 — **002 · Modelo de dados concluída**: schema com 12 tabelas + enums + índices, migration inicial aplicada no Supabase, seed idempotente (conta demo: 12 contatos/negócios + 13 tarefas), telefone E.164 com 13 testes verdes
 - [x] 17/10/2026 — **004 · Isolamento multi-tenant concluída**: client de tenant (`$extends`) com `account_id` automático, contexto por request (AsyncLocalStorage), SQL cru bloqueado no lint, regressão estrutural do schema — 15 testes novos (28 verdes no total)
 - [x] 17/10/2026 — **003 · Auth, contas, papéis e convites concluída**: Better Auth 1.7.10 (sessão em cookie, scrypt, rate limit), cadastro cria conta + Admin, convites com link copiável e uso único, reset de senha ponta a ponta, `/equipe` com desativar/reativar, proxy otimista + `requireAuth`/`requireRole` — 25 testes novos (53 verdes no total), build Cache Components ✓
+- [x] 23/10/2026 — **005 · Contatos e captura rápida concluída**: `createLead()` transacional (contato + negócio “Novo” + tarefa “Primeiro contato” para hoje + timeline), funil padrão criado no cadastro e garantido para contas antigas, `/contatos` com busca/paginação, edição, exclusão lógica com limpeza de negócios abertos e WhatsApp/ligar em lista e detalhe — 21 testes novos (74 verdes no total), build/lint/typecheck ✓
 
 ---
 

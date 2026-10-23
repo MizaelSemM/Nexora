@@ -69,13 +69,22 @@ npm run db:studio    # Prisma Studio
 - O `proxy.ts` faz só uma checagem **otimista** do cookie de sessão (menos latência); a validação real acontece em toda página/action via `requireAuth()`/`requireRole()` (`lib/session.ts`).
 - Fluxos com rate limit (login, cadastro, reset) passam pelo navegador em `/api/auth/*`; cadastro e convite são Server Actions (criam a conta no servidor).
 
+## Contatos e captura de leads
+
+- **`/contatos`**: lista com busca por nome/telefone, paginação e recorte por papel (vendedor vê só os próprios).
+- **`/contatos/novo`**: captura rápida em **nome + telefone**; cria automaticamente o negócio na etapa “Novo” e a tarefa “Primeiro contato” para hoje.
+- **`/contatos/[id]`**: ficha com **Abrir no WhatsApp** / **Ligar**, edição, troca de responsável (Admin) e exclusão lógica.
+- **Telefone duplicado** não duplica o lead: a tela avisa e oferece abrir o contato existente.
+- O funil padrão (Novo → Contatado → Proposta enviada → Negociação) nasce com a conta; contas antigas ganham o funil no primeiro lead.
+- Excluir um contato tira os negócios **abertos** do funil e cancela tarefas futuras; ganhos/perdidos e tarefas concluídas ficam no histórico.
+
 ## Estrutura
 
 ```
 app/          rotas e telas — (auth) públicas e (app) logadas (App Router)
 components/   UI compartilhada (shadcn/ui)
-lib/          utilitários — env, phone, auth(+client), session, access, tenant-*, schemas/ (Zod)
-server/       regras de negócio — signup, invites, team, erros tipados
+lib/          utilitários — env, phone, auth(+client), session, access, analytics, tenant-*, schemas/ (Zod)
+server/       regras de negócio — signup, invites, team, services/ (leads, contatos, funil), erros tipados
 prisma/       schema, migrations e seed
 tests/        testes Vitest — unit/ e integration/ (banco real)
 e2e/          testes ponta a ponta (Playwright)

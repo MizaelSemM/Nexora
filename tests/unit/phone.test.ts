@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatPhoneBR, normalizePhoneBR, whatsappLinkBR } from "@/lib/phone";
+import { formatPhoneBR, maskPhoneInput, normalizePhoneBR, whatsappLinkBR } from "@/lib/phone";
 
 describe("normalizePhoneBR", () => {
   it("normaliza celular com DDD sem máscara", () => {
@@ -63,5 +63,27 @@ describe("whatsappLinkBR", () => {
 
   it("retorna null para telefone inválido", () => {
     expect(whatsappLinkBR("abc")).toBeNull();
+  });
+});
+
+describe("maskPhoneInput", () => {
+  it("formata progressivamente enquanto digita", () => {
+    expect(maskPhoneInput("")).toBe("");
+    expect(maskPhoneInput("1")).toBe("(1");
+    expect(maskPhoneInput("11")).toBe("(11");
+    expect(maskPhoneInput("119")).toBe("(11) 9");
+    expect(maskPhoneInput("119876")).toBe("(11) 9876");
+    expect(maskPhoneInput("1198765")).toBe("(11) 9876-5");
+    expect(maskPhoneInput("1198765432")).toBe("(11) 9876-5432");
+    expect(maskPhoneInput("11987654321")).toBe("(11) 98765-4321");
+  });
+
+  it("aceita colar com DDI e remove zero de operadora", () => {
+    expect(maskPhoneInput("+55 11 98765-4321")).toBe("(11) 98765-4321");
+    expect(maskPhoneInput("011987654321")).toBe("(11) 98765-4321");
+  });
+
+  it("não aceita mais de 11 dígitos", () => {
+    expect(maskPhoneInput("119876543219999")).toBe("(11) 98765-4321");
   });
 });

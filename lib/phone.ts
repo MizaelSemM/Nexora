@@ -54,3 +54,30 @@ export function whatsappLinkBR(e164: string): string | null {
   if (!normalized) return null;
   return `https://wa.me/${normalized.replace("+", "")}`;
 }
+
+/**
+ * Máscara progressiva para o input de telefone (client): formata enquanto a
+ * pessoa digita, sem validar. A validação/normalização E.164 é SEMPRE no
+ * servidor (`normalizePhoneBR`) — a máscara é só conveniência de UX.
+ *
+ * Aceita colar com DDI 55 e remove zeros de operadora, para o campo nunca
+ * "explodir" com mais de 11 dígitos.
+ */
+export function maskPhoneInput(input: string): string {
+  let digits = input.replace(/\D/g, "").replace(/^0+/, "");
+
+  if (digits.length > 11 && digits.startsWith("55")) {
+    digits = digits.slice(2).replace(/^0+/, "");
+  }
+  digits = digits.slice(0, 11);
+
+  if (!digits) return "";
+  if (digits.length <= 2) return `(${digits}`;
+
+  const ddd = digits.slice(0, 2);
+  const rest = digits.slice(2);
+
+  if (rest.length <= 4) return `(${ddd}) ${rest}`;
+  if (rest.length <= 8) return `(${ddd}) ${rest.slice(0, 4)}-${rest.slice(4)}`;
+  return `(${ddd}) ${rest.slice(0, 5)}-${rest.slice(5)}`;
+}

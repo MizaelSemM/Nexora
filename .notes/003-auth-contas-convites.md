@@ -71,3 +71,4 @@
 - E-mail real: criar conta Resend + `RESEND_API_KEY` + domínio verificado (item de contas do dono, pendência da 001).
 - Reavaliar streaming na área logada (remover `instant = false`) na tarefa de performance (016).
 - A senha demo `demo1234` é fraca de propósito (local) — o cadastro real exige 8+ e é o caminho oficial.
+- **Login (corrigido na 005):** após `signIn.email`, a navegação passou a ser hard (`window.location.assign`) — o router client-side podia reutilizar o RSC de `/` pré-carregado sem sessão e voltar para `/login`.

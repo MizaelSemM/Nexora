@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,6 @@ import { firstIssueMessage, loginSchema } from "@/lib/schemas/auth";
  * NAVEGADOR para /api/auth, que passa pelo rate limit do Better Auth).
  */
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = sanitizeRedirectPath(searchParams.get("redirect"));
 
@@ -65,8 +64,10 @@ export function LoginForm() {
       return;
     }
 
-    router.push(redirectTo);
-    router.refresh();
+    // Navegação HARD após o login: o Next pode ter pré-carregado `/` antes da
+    // sessão existir e o router client-side reutilizar o payload antigo (que
+    // redireciona de volta para /login). O reload garante cookie + cache limpos.
+    window.location.assign(redirectTo);
   }
 
   return (

@@ -48,6 +48,8 @@ describe("auth: cadastro, convites e equipe (integração)", () => {
     try {
       if (accountIds.length > 0) {
         // Cascatas: sessões, credenciais e convites (createdBy) caem com o usuário.
+        await prismaBase.stage.deleteMany({ where: { accountId: { in: accountIds } } });
+        await prismaBase.pipeline.deleteMany({ where: { accountId: { in: accountIds } } });
         await prismaBase.user.deleteMany({ where: { accountId: { in: accountIds } } });
         await prismaBase.account.deleteMany({ where: { id: { in: accountIds } } });
       }
@@ -75,6 +77,20 @@ describe("auth: cadastro, convites e equipe (integração)", () => {
       expect(credential?.password).toBeTruthy();
       expect(credential?.password).not.toContain(TEST_PASSWORD);
       expect((credential?.password ?? "").length).toBeGreaterThan(20);
+
+      const pipeline = await prismaBase.pipeline.findFirst({
+        where: { accountId: admin.accountId },
+        include: {
+          stages: { orderBy: { position: "asc" }, select: { name: true } },
+        },
+      });
+      expect(pipeline?.name).toBe("Comercial");
+      expect(pipeline?.stages.map((stage) => stage.name)).toEqual([
+        "Novo",
+        "Contatado",
+        "Proposta enviada",
+        "Negociação",
+      ]);
     });
 
     it("recusa e-mail já cadastrado e não deixa conta órfã", async () => {
